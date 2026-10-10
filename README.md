@@ -50,18 +50,8 @@ DrainTwin turns that question into an interactive, explainable workflow. Instead
 
 #### 1. Main dashboard — rainfall scenario and susceptibility map
 
-![DrainTwin interactive rainfall susceptibility dashboard](docs/screenshots/dashboard.png)
+![DrainTwin interactive rainfall susceptibility dashboard](docs/screenshots/Screenshot 2026-10-10 190803.png)
 
-#### 2. Hotspot inspection and intervention scenarios
-
-![DrainTwin hotspot details and illustrative interventions](docs/screenshots/hotspot-interventions.png)
-
-#### 3. Gemini explanation powered by AWS Strands Agents
-
-![DrainTwin AI-generated hotspot explanation](docs/screenshots/gemini-advisory.png)
-
-<!-- Optional: replace this placeholder with a YouTube, Drive or hosted video link after recording. -->
-**Demo video:** _Coming soon — add a link here after recording the walkthrough._
 
 ---
 
