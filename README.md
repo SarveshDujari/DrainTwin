@@ -12,7 +12,7 @@
 [![Gemini](https://img.shields.io/badge/Cloud%20LLM-Google%20Gemini-4285F4)](https://ai.google.dev/)
 [![Ollama](https://img.shields.io/badge/Local%20LLM-Ollama-333333)](https://ollama.com/)
 
-**Built for [Environmental Hacks — Bharat Builds Tour](https://www.wemakedevs.org/aws/env), hosted by WeMakeDevs in collaboration with AWS · October 8–11, 2026.**
+**Built for [Environmental Hacks — Bharat Builds Tour]**
 
 [Features](#-what-you-can-do) · [Architecture](#-system-architecture) · [Quick start](#-quick-start) · [Model](#-how-the-susceptibility-model-works) · [AI](#-ai-advisory-architecture) · [Limitations](#-limitations-and-responsible-use)
 
@@ -549,12 +549,6 @@ Validation scripts are retained in `backend/preprocessing/`, even if the experim
 
 ---
 
-## 🏆 Hackathon
-
-**DrainTwin was built for [Environmental Hacks](https://www.wemakedevs.org/aws/env), Event 02 of the [Bharat Builds Tour](https://www.wemakedevs.org/aws), organized by [WeMakeDevs](https://www.wemakedevs.org/) in collaboration with AWS (October 8–11, 2026).**
-
-The project addresses the **urban flooding and waterlogging** problem area by demonstrating how accessible geospatial data, transparent scenario modelling and AI explanations can support exploratory climate-resilience planning.
-
 ## 🙌 Data sources and acknowledgments
 
 - **OpenStreetMap contributors** — mapped waterways and related geographic features; see [OpenStreetMap copyright](https://www.openstreetmap.org/copyright).
@@ -562,16 +556,4 @@ The project addresses the **urban flooding and waterlogging** problem area by de
 - **Elevation and land-cover datasets** — see the preprocessing scripts for the specific DEM and land-cover sources used to build the grid; retain their original attribution and usage requirements.
 - **AWS Strands Agents**, **Google Gemini**, **Ollama**, **React**, **Leaflet**, **FastAPI**, **NumPy** and **SciPy** — software ecosystem used by the prototype.
 
-## 👨‍💻 Project author
 
-Developed by **[Sarvesh Dujari](https://github.com/SarveshDujari)** for Environmental Hacks — Bharat Builds Tour.
-
----
-
-<div align="center">
-
-**DrainTwin — Explore the terrain. Understand the scenario. Question the assumptions.**
-
-[⬆ Back to top](#️-draintwin)
-
-</div>
