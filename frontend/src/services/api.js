@@ -1,0 +1,23 @@
+const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+async function request(path, { method = 'GET', body, signal, timeout = 12000 } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  const abort = () => controller.abort();
+  signal?.addEventListener('abort', abort, { once: true });
+  try {
+    const response = await fetch(`${BASE}${path}`, { method,
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined, signal: controller.signal });
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`HTTP ${response.status}: ${detail.slice(0, 250)}`);
+    }
+    return await response.json();
+  } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
+}
+export const simulate = (rainfall_mm, signal) => request('/api/simulate', {method:'POST',body:{rainfall_mm},signal});
+export const runIntervention = (hotspot_id, type, rainfall_mm) => request('/api/intervention', {method:'POST',body:{hotspot_id,type,rainfall_mm}});
+export const getForecast = () => request('/api/weather');
+export const getValidation = (signal) => request('/api/validation?rainfall_mm=150&top_n=12&radius_m=300', {signal});
+export const getAgentStatus = () => request('/api/agent/status');
+export const getAgentBrief = (hotspot_id, rainfall_mm, use_agent=false, signal) => request('/api/agent/brief', {method:'POST',body:{hotspot_id,rainfall_mm,use_agent},signal,timeout:85000});

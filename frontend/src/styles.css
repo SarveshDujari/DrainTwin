@@ -1,0 +1,118 @@
+:root { --bg:#f8fafc; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --accent:#0d9488; }
+* { box-sizing: border-box; }
+body { margin:0; font-family:Inter,system-ui,sans-serif; color:var(--ink); background:var(--bg); }
+.app, .map { position:fixed; inset:0; }
+.card { position:absolute; z-index:1000; background:#fff; border:1px solid var(--line); border-radius:12px;
+        box-shadow:0 4px 18px rgba(15,23,42,.08); padding:14px 16px; }
+.label { font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.muted { font-size:12px; color:var(--muted); margin-top:8px; }
+.brand { top:16px; left:16px; display:flex; flex-direction:column; gap:2px; }
+.brand b { font-size:17px; } .brand span { font-size:12px; color:var(--muted); }
+.rain { bottom:16px; left:16px; width:290px; }
+.rain-value { font-size:28px; font-weight:700; } .rain-value span { font-size:13px; font-weight:500; color:var(--muted); }
+input[type=range] { width:100%; accent-color:var(--accent); margin:8px 0 0; }
+.scale { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+.row { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; } .wrap { flex-wrap:wrap; }
+.chip { font:inherit; font-size:12px; font-weight:500; padding:6px 10px; border-radius:999px; border:1px solid var(--line);
+        background:#fff; cursor:pointer; } .chip:hover { border-color:var(--accent); color:var(--accent); }
+.chip-accent { background:var(--accent); border-color:var(--accent); color:#fff; } .chip-accent:hover { color:#fff; opacity:.9; }
+.legend { bottom:16px; right:16px; } .legend-row { display:flex; align-items:center; gap:8px; font-size:13px; margin-top:4px; }
+.legend i, .popup-head i { width:12px; height:12px; border-radius:50%; display:inline-block; }
+.stats { position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:1000; display:flex; gap:10px; }
+.stat { position:static; padding:10px 16px; text-align:center; display:flex; flex-direction:column; min-width:96px; }
+.stat b { font-size:18px; } .stat span { font-size:11px; color:var(--muted); }
+.popup { top:84px; right:16px; width:310px; }
+.popup-head { display:flex; align-items:center; gap:12px; margin-bottom:12px; } .popup-head i { width:16px; height:16px; }
+.score { font-size:24px; font-weight:700; } .score span { font-size:13px; font-weight:500; color:var(--muted); }
+.popup ul { margin:0 0 12px; padding-left:18px; font-size:13px; line-height:1.55; }
+.close { position:absolute; top:8px; right:12px; border:0; background:none; font-size:22px; color:var(--muted); cursor:pointer; }
+.result { margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
+@media (max-width:720px) { .stats { top:70px; width:calc(100% - 32px); overflow-x:auto; } .popup { top:auto; bottom:190px; right:16px; left:16px; width:auto; } .legend { display:none; } }
+
+.leaflet-tile-pane { filter: grayscale(.75) brightness(1.06) contrast(.92); }   /* keeps the basemap muted */
+
+.legend-row span { margin-left:auto; padding-left:14px; font-size:11px; color:var(--muted); }
+.legend-row { min-width:170px; }
+.dots { text-transform:none; letter-spacing:0; font-weight:500; color:var(--accent); }
+.count { left:16px; top:50%; transform:translateY(-50%); width:112px; text-align:center; display:flex; flex-direction:column; align-items:center; }
+.count-num { white-space:nowrap; } .count-num b { font-size:24px; } .count-num span { font-size:12px; color:var(--muted); }
+.count input { writing-mode:vertical-lr; direction:rtl; height:150px; width:28px; margin:8px 0; accent-color:var(--accent); }
+.confidence { font-size:12px; color:var(--muted); margin:-4px 0 12px; line-height:1.45; } .confidence b { color:var(--ink); }
+.banner { position:fixed; top:84px; left:50%; transform:translateX(-50%); z-index:1000; background:#fffbeb; color:#92400e;
+          border:1px solid #fde68a; border-radius:999px; padding:5px 14px; font-size:12px; white-space:nowrap; }
+.banner code { background:#fef3c7; padding:1px 5px; border-radius:4px; }
+.area-label { font-size:11px; font-weight:600; color:#475569; background:rgba(255,255,255,.85); padding:2px 8px; border-radius:6px; width:auto !important; white-space:nowrap; }
+@media (max-width:720px) { .count { top:auto; bottom:210px; transform:none; flex-direction:row; width:auto; gap:10px; } .count input { writing-mode:horizontal-tb; direction:ltr; height:auto; width:110px; } .banner { top:130px; } }
+/* Phase 2 validation: compact optional overlay; does not obstruct the main map. */
+.validation-card { right:16px; top:84px; width:260px; padding:10px 14px; }
+.validation-toggle { width:100%; display:flex; justify-content:space-between; align-items:center; border:0; background:transparent; font:inherit; font-size:12px; font-weight:650; cursor:pointer; color:var(--ink); text-align:left; }
+.validation-body { padding:6px 0 2px; }
+.validation-numbers { font-size:12px; margin-top:8px; }
+.validation-numbers b { font-size:18px; }
+.validation-numbers span { color:var(--muted); }
+.validation-legend { display:flex; align-items:center; gap:6px; font-size:11px; margin-top:8px; }
+.validation-legend i { display:inline-block; width:10px; height:10px; border:2px solid #1d4ed8; border-radius:50%; background:#fff; }
+@media(max-width:720px) { .validation-card { top:135px; right:12px; width:210px; } }
+@media(min-width:721px) { .validation-open .popup { top:255px; max-height:calc(100vh - 270px); overflow:auto; } }
+
+/* Phase 5: advisory inside the selected hotspot card */
+.popup { max-height:calc(100vh - 110px); overflow-y:auto; overscroll-behavior:contain; }
+.agent-section { border-top:1px solid var(--line); margin-top:14px; padding-top:12px; }
+.agent-hint { color:var(--muted); font-size:12px; line-height:1.5; margin:4px 0; }
+.agent-output { background:#f0fdfa; border:1px solid #99f6e4; border-radius:9px; padding:12px; margin-top:10px; }
+.agent-summary { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; line-height:1.6; }
+.agent-error { color:#b91c1c; font-size:12px; line-height:1.5; }
+@media(max-width:720px) { .popup { max-height: min(52vh, 460px); overflow-y:auto; } }
+
+/* Phase 5.1: avoid panel overlap, keep keyboard focus visible and support narrow screens. */
+.validation-card { top:84px; right:16px; }
+.validation-open .popup { top:255px; max-height:calc(100vh - 270px); }
+button:focus-visible, input:focus-visible { outline:3px solid #2563eb; outline-offset:3px; }
+@media(max-width:720px) {
+  .brand { top:8px; left:8px; max-width:calc(100% - 90px); }
+  .brand span { display:none; }
+  .stats { top:55px; left:8px; width:calc(100% - 16px); max-width:100%; }
+  .stat { min-width:115px; }
+  .validation-card { top:128px; right:8px; width:min(210px,55vw); }
+  .popup, .validation-open .popup { position:fixed; top:auto; bottom:0; left:0; right:0;
+    width:auto; max-height:52dvh; overflow-y:auto; border-radius:18px 18px 0 0; z-index:1100; }
+  .count { display:none; }
+}
+
+/* Phase 5.2: non-overlapping navigation and a keyboard-accessible alternative to map pins. */
+.hotspot-list { top:84px; left:16px; width:210px; max-height:min(34vh,310px); display:flex; flex-direction:column; gap:6px; }
+.hotspot-list-scroll { overflow:auto; min-height:0; }
+.hotspot-list button { display:flex; width:100%; justify-content:space-between; gap:8px; text-align:left; background:#fff; border:0; border-bottom:1px solid var(--line); padding:8px 2px; font:inherit; font-size:12px; cursor:pointer; }
+.hotspot-list button[aria-current="true"] { color:var(--accent); font-weight:700; }
+.hotspot-list button:hover { color:var(--accent); }
+@media(min-width:721px) { .count { top:calc(84px + min(34vh,310px) + 30px); transform:none; } }
+@media(max-width:720px) {
+  .hotspot-list { top:125px; left:8px; width:min(175px,46vw); max-height:135px; padding:8px; }
+  .hotspot-list-scroll { max-height:90px; }
+  .hotspot-list button { padding:5px 1px; font-size:11px; }
+  .popup, .validation-open .popup { max-height:55dvh; }
+  .rain { bottom:12px; left:8px; width:min(280px,calc(100vw - 16px)); }
+  .validation-card { right:8px; top:125px; max-width:46vw; }
+}
+
+/* Phase 5.4: Restore uncluttered map after removing Explore Hotspots. */
+.hotspot-list { display:none !important; }
+@media (min-width:721px) { .count { top:50%; transform:translateY(-50%); } }
+@media (max-width:720px) {
+  .brand { top:8px; left:8px; max-width:calc(100vw - 78px); padding:9px 12px; }
+  .brand b { font-size:15px; }
+  .stats { top:58px; left:8px; width:calc(100% - 16px); gap:5px; overflow-x:auto; }
+  .stat { min-width:85px; padding:7px 9px; }
+  .stat b { font-size:15px; }
+  .stat span { font-size:10px; }
+  .rain { bottom:8px; left:8px; width:min(290px,calc(100vw - 16px)); padding:10px 12px; }
+  .rain-value { font-size:23px; }
+  .validation-card { top:120px; right:8px; width:min(190px,48vw); }
+  .popup, .validation-open .popup { bottom:0; max-height:55dvh; }
+  .leaflet-top.leaflet-right { top:4px; }
+}
+@media (max-width:390px) {
+  .stats { top:55px; }
+  .stat { min-width:75px; }
+  .rain { width:calc(100vw - 16px); }
+}
