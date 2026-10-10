@@ -50,7 +50,7 @@ DrainTwin turns that question into an interactive, explainable workflow. Instead
 
 #### 1. Main dashboard — rainfall scenario and susceptibility map
 
-![DrainTwin interactive rainfall susceptibility dashboard](docs/screenshots/Screenshot 2026-10-10 190803.png)
+![DrainTwin interactive rainfall susceptibility dashboard](docs/screenshots/dashboard.png)
 
 
 ---
