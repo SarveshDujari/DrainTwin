@@ -46,8 +46,6 @@ DrainTwin turns that question into an interactive, explainable workflow. Instead
 
 ### 📸 Screenshots
 
-> **Add your screenshots** to `docs/screenshots/` using the filenames below. The images will display automatically once committed. Replace filenames in this README if yours differ.
-
 #### 1. Main dashboard — rainfall scenario and susceptibility map
 
 ![DrainTwin interactive rainfall susceptibility dashboard](docs/screenshots/dashboard.png)
