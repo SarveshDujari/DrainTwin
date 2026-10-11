@@ -150,6 +150,7 @@ def run(rain):
                   else 'MODERATE' if area_fraction >= .01 else 'LOW')
     return {
         "risk_level": area_level, "risk_score": round(top), "data_source": DATA_SOURCE,
+        "rainfall_mm": float(rain), "candidate_sites": len(SITES), "analysis_resolution_m": round(CELL_M),
         "overall_level_note": "Heuristic area-coverage category (LOW <1%, MODERATE 1–10%, HIGH 10–25%, CRITICAL >=25% of non-water cells at index 45+); not a flood forecast.",
         "max_cell_susceptibility_index": round(top), "area_summary_basis": "share_of_study_area_at_index_45_or_above",
         "hotspots": spots, "total_hotspots": len(spots),

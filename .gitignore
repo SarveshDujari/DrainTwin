@@ -52,3 +52,5 @@ backend/data/raw/
 # Keep important documentation
 !README.md
 !LICENSE.md
+
+outputs/

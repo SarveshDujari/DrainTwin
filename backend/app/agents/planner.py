@@ -49,7 +49,7 @@ def fallback_brief(evidence):
         summary = f"No intervention scenarios available for site {evidence['hotspot_id']}."
     if evidence.get('reasons'):
         summary += ' Modelled terrain factors: ' + '; '.join(evidence['reasons'][:3]) + '.'
-    summary += ' The 30 m-scale terrain and mapped waterway proxies cannot resolve drainage capacity or individual underpasses.'
+    summary += f' Finer source terrain is aggregated to approximately {R.CELL_M:.0f} m analysis cells; mapped waterways do not establish drainage capacity or individual underpass conditions.'
     return {'mode': 'deterministic_fallback', 'summary': summary, 'evidence': evidence, 'disclaimer': DISCLAIMER}
 
 # Cloud and local providers are both executed through AWS Strands Agents.
@@ -102,6 +102,10 @@ def valid_explanation(text):
     if re.search(r'\d', text):
         return False  # All numbers are rendered exclusively from deterministic evidence.
     lowered = text.lower()
+    if any(phrase in lowered for phrase in ('guarantee', 'remain safe', 'prevent flooding', 'flood probability', 'will not flood', 'always safe')):
+        return False
+    if not ('modelled' in lowered or 'modeled' in lowered) or not ('not observed' in lowered or 'not an observed' in lowered):
+        return False
     return not any(phrase in lowered for phrase in ('i understand', 'i will adhere',
                         'as an ai', 'here is the', 'i cannot', 'i can provide'))
 
