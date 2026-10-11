@@ -1,156 +1,124 @@
-# 🌧️ DrainTwin
-Urban flood-risk digital twin for central Delhi: a transparent geospatial risk model, stable hotspot sites,
-confidence estimates, and a what-if intervention simulator on one zoomable map. 100% free data and tools.
+# DrainTwin 🌧️
 
-## Run
-```bash
-# backend (Python 3.10+)
-cd backend && python -m pip install -r requirements.txt
-python preprocessing/make_demo_data.py       # only if you have no real grid yet -> data/delhi_grid_demo.npz
-python -m uvicorn app.main:app --reload      # http://localhost:8000/docs
+### Explore urban waterlogging risk across Central Delhi—and compare routes before the rain gets worse.
 
-# frontend (new terminal, Node 18+)
-cd frontend && npm install && npm run dev    # http://localhost:5173
+DrainTwin is a map-based flood-susceptibility and route-planning demo. Choose a rainfall scenario, see where the model marks higher relative risk, and compare driving routes by estimated time and exposure to modelled hotspots.
 
-# tests
-cd backend && python -m pip install -r requirements-dev.txt && python -m pytest -q
+**Built for the [Environmental Hacks event in the Bharat Builds Tour](https://www.wemakedevs.org/aws/env).**
+
+![DrainTwin route planner showing a selected route across the Central Delhi risk map](docs/screenshots/route-planner.png)
+
+## What you can do
+
+- **Explore a rain scenario.** Set a 24-hour rainfall amount or load a live forecast, then see how the susceptibility map and hotspot indicators respond.
+- **Compare routes.** Pick start and destination points on the map or use landmark presets. Compare the fastest option with a balanced or lower-risk route, with an adjustable time budget for detours.
+- **See why a route ranks higher.** Route cards show estimated drive time, nearby modelled hotspots, and distance through higher-risk parts of the study area.
+- **Inspect a hotspot.** View the model signals behind its score and confidence, try illustrative drainage or retention interventions, and read an always-available offline briefing.
+- **Understand the scenario.** The dashboard reports affected-area coverage and other indicators so the map is more than a collection of red dots.
+
+## How it works
+
+The browser sends a rainfall scenario to a small API. The API scores a precomputed terrain and land-cover grid. The map overlays that score on street tiles, while the route planner requests road alternatives and scores them against the same risk surface. A forecast can supply the rainfall amount; it does not provide flood observations.
+
+```mermaid
+flowchart LR
+  subgraph Browser[Web app]
+    UI[React map and controls]
+    Route[Route comparison]
+    UI -->|rainfall and map actions| API
+    Route -->|start, destination, preference| API
+    UI -->|street map tiles| Tiles[OpenStreetMap tiles]
+  end
+
+  subgraph Service[FastAPI service]
+    API[Simulation and routing API]
+    Engine[Rainfall and susceptibility model]
+    Grid[(Central Delhi analysis grid)]
+    API --> Engine
+    Engine --> Grid
+    API -->|risk-scored road alternatives| Route
+    API --> Briefing[Offline hotspot briefing]
+    API -. optional .-> Agent[Strands agent]
+  end
+
+  Sources[Elevation, land cover, waterways] -->|preprocessing| Grid
+  API -->|road alternatives and ETA| OSRM[OSRM routing service]
+  Forecast[Open-Meteo forecast] -->|optional 24-hour rainfall| UI
+  Agent -. optional local model .-> LLM[Ollama]
 ```
 
-## Real data (replaces the demo grid)
+### The model, in plain language
+
+The backend combines estimated rain runoff with terrain and drainage-related signals to produce a **relative susceptibility index** for each grid cell. It identifies a fixed set of candidate sites and shows which ones cross the display threshold for the selected scenario. These scores help compare places and scenarios; they are not probabilities, observed flood depths, or verified road conditions.
+
+For routing, the app asks OSRM for road alternatives, samples each route against the risk grid, and compares estimated time and exposure to higher-risk cells and nearby hotspots. The selected preference controls how much extra travel time is acceptable. Rainfall changes update the route scores, though the same route can still rank best when alternatives are less favorable. Drive times are estimates and do not include live traffic.
+
+## Project layout
+
+| Path | Purpose |
+| --- | --- |
+| `frontend/` | React, Vite, Leaflet map, scenario controls, hotspot details, and route comparison UI |
+| `backend/app/` | FastAPI endpoints, risk simulation, routing, and optional advisory integrations |
+| `backend/data/delhi_grid.npz` | Precomputed Central Delhi analysis grid used by the model |
+| `backend/data/validation/` | Candidate historical locations and the validation review notes |
+| `backend/preprocessing/` | Scripts for preparing the analysis grid and reviewing candidate validation points |
+| `docs/screenshots/` | Screenshots used in the project overview |
+
+## Run it locally
+
+You need Python 3.10 or newer and Node.js 18 or newer. Start the API and web app in separate terminals.
+
+**1. Start the backend**
+
 ```bash
-cd backend && python -m pip install -r requirements-data.txt
-python preprocessing/build_grid.py           # DEM + WorldCover + OSM -> data/delhi_grid.npz
-python preprocessing/validate.py
+cd backend
+python -m pip install -r requirements.txt
+python -m uvicorn app.main:app --reload
 ```
-The API uses `data/delhi_grid.npz` when it exists, otherwise the synthetic `delhi_grid_demo.npz`
-(the UI shows a "Demo data" banner). **Re-run `build_grid.py` after updating**: Phase 1 added a water mask
-and a DEM edge buffer. An older grid still works, just without the water mask.
 
-## How the model works (Phase 1)
-`risk = 100 · hazard^0.6 · (0.25 + 0.75 · susceptibility)`
-- **hazard**: SCS Curve Number runoff depth, so light rain on permeable ground produces exactly zero (nothing is shaded at ~10 mm).
-- **susceptibility**: 0.35 runoff convergence + 0.30 local depression (below the ~1.7 km neighbourhood) + 0.20 flatness + 0.15 distance to drains.
-- **Hotspot sites** are fixed local maxima, so a hotspot's ID and position never change with the slider; it simply appears once its score passes 45.
-- **Confidence**: 100 re-runs with perturbed weights / curve numbers; each hotspot shows how often it is still flagged, and a plausible score range.
-- **Explanations** list only what is unusual about a spot compared with the area median, with real numbers.
-- **Interventions** rescale inputs within a ~500 m radius and re-score. They are relative what-if estimates, not engineering guarantees.
-- Water bodies are masked and never flagged.
+The API runs at `http://localhost:8000`; its interactive endpoint page is at `http://localhost:8000/docs`.
 
-Assumptions to state honestly: curve numbers (61 open ground, 98 paved), the weights, and the score thresholds (25/45/65)
-are hand-set, not fitted. Phase 2 validates them against known waterlogging points.
+**2. Start the frontend**
 
-## Status
-- [x] Phase 1: engine v2, stable sites, top-N slider, canvas risk layer, confidence, tests
-- [ ] Phase 2: ground-truth set and validation (hit rate vs. chance)
-- [ ] Phase 3: better signals (OSM underpasses, height above drain, runoff routing, 128x128 grid, storm replay)
-- [ ] Phase 4: Strands Agents explainer / intervention planner
-- [ ] Phase 5: polish, docs, demo   |   Phase 6 (optional): AWS deployment
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Phase 2: historical validation (added)
+Open `http://localhost:5173`. Internet access is needed for the external map tiles, forecast, and road routing services. If the bundled analysis grid is unavailable, the backend can use its clearly labelled demo-data fallback.
 
-The `backend/data/validation/ground_truth.csv` contains **42 source-linked candidate locations**, not 42 verified coordinates. This is intentionally a research/verification queue; no accuracy number is displayed until exact coordinates are manually reviewed. See `backend/data/validation/README.md` for the verification protocol and source links.
+## Try the route planner
+
+1. Open **Plan a route** and choose two points on the map, or select a landmark pair.
+2. Set a rainfall scenario with the slider or load the 24-hour forecast.
+3. Compare **Fastest**, **Balance time & risk**, and **Lower risk** preferences.
+4. Adjust the maximum extra time and select a route card to display it on the map.
+
+Route rankings are scenario comparisons, not flood-safe navigation instructions. A high-risk segment does not mean a road is currently closed or flooded.
+
+## Data and limitations
+
+- The study area is Central Delhi. The analysis grid is approximately 243 m per cell; the map itself is for exploration, not street-level flood prediction.
+- The rainfall response, feature weights, thresholds, and intervention multipliers are hand-set assumptions. The system is a scenario-based prototype, not a trained forecasting model.
+- Drainage proximity is a geographic signal. The project does not know drain capacity, blockage, or current standing water.
+- Historical validation data contains candidate locations awaiting manual verification. The project does not claim a measured accuracy score from those unverified candidates.
+- The 24-hour forecast describes expected rain, not present road conditions. Route ETAs do not include live traffic.
+- Route requests send coordinates to the configured OSRM service. Forecast requests use Open-Meteo; map tiles use OpenStreetMap tile providers.
+- Optional AI briefings can use the Strands Agents SDK with a local Ollama model. The deterministic offline briefing remains available without that setup.
+
+## Checks
 
 From `backend`:
 
-```powershell
-python preprocessing/evaluate_ground_truth.py --rainfall 150 --top-n 12 --radius 300
+```bash
+python -m pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-To suggest (not verify) coordinates, use `python preprocessing/geocode_ground_truth.py --limit 10 --user-agent "DrainTwinResearch/0.1 (your-email@example.com)"`. Inspect suggested locations, correct them, and mark only genuinely checked points `verified` in the CSV. The optional **Historical validation** map panel calls `GET /api/validation` and shows verified points and results. If no points are verified, it correctly withholds accuracy statistics. A 300 m radius and 150 mm scenario are predeclared defaults, not optimized to the results.
+From `frontend`:
 
-**Caution:** The current terrain-only comparison is a drainage-weight ablation on fixed hotspot candidate sites; it is not a fully independent baseline. The area-coverage comparison is descriptive, not a significance test.
-
-## Phase 4–5: local AI advisory in the map
-
-Click a hotspot, then choose **Offline briefing** (always available) or **AI briefing** (AWS Strands Agents with local Ollama). The interface displays the returned mode, evidence-grounded summary, and disclaimer. If an AI request fails, the API may explicitly return `deterministic_fallback` with `agent_error`; the interface labels this as offline rather than falsely claiming AI execution.
-
-Optional local AI setup (PowerShell, from `backend`):
-
-```powershell
-python -m pip install -r requirements-agents.txt
-ollama pull gemma3:4b
-$env:STRANDS_ENABLED = "1"
-$env:OLLAMA_HOST = "http://localhost:11434"
-$env:OLLAMA_MODEL = "gemma3:4b"
-python -m uvicorn app.main:app --reload
+```bash
+npm test
+npm run build
 ```
-
-In another terminal, start the frontend with `npm install` and `npm run dev`. Ollama must be running. Verify `GET /api/agent/status` and use the map's AI briefing button. No AWS account or paid LLM API is needed for this local path. The model can be slow on limited hardware; offline briefing is the reliable demo fallback.
-
-### Demo flow
-
-1. Start backend and frontend; confirm the real grid is loaded (no synthetic-data banner).
-2. Adjust rainfall to 150 mm and observe hotspot counts and relative risk shading.
-3. Click a hotspot to inspect location-specific evidence and uncertainty.
-4. Try a modelled intervention and inspect before/after score.
-5. Click **Offline briefing**, then optionally **AI briefing** to demonstrate Strands + Ollama.
-6. Open historical validation panel: explain that candidate locations are **not verified ground truth** and that accuracy is not yet established.
-
-### Current scope and limitations
-
-- The 64×64 Central Delhi grid covers `[28.56, 77.15, 28.70, 77.30]` (south, west, north, east). It does not represent all Delhi.
-- The Phase 3 spatial diagnostics and 80/20 comparison are exploratory; they are not proven to improve predictive skill.
-- Phase 2 has 42 candidate records but requires independent coordinate verification before publishing hit rate or lift.
-- Risk and intervention scores are heuristic susceptibility indicators, not flood probabilities, observed water depth, or engineered drainage designs.
-- AI text is generated from the existing evidence and is not independently verified. The model cannot assess cost, site access, or construction feasibility.
-- Historical storm replay, source-resolution 128×128 preprocessing, and reliable underpass extraction are not complete.
-- Optional AWS deployment remains out of scope for the local demo.
-
-## Phase 5.1 — Gemini / Ollama / offline advisory
-
-The deterministic risk engine is authoritative for numerical values. AWS Strands
-Agents may add **only a prose explanation**. Any AI response containing digits,
-acknowledging the prompt, or failing basic checks is rejected. Numeric scores and
-illustrative interventions are always rendered from the engine's evidence. This
-is a safety guard, **not** a complete factual verification of AI prose.
-
-Backend setup (PowerShell, from `backend/`):
-
-```powershell
-python -m pip install -r requirements.txt
-python -m pip install -r requirements-agents.txt
-Copy-Item .env.example .env
-# Edit .env; GEMINI_API_KEY is optional. Do not commit your key.
-python -m uvicorn app.main:app --reload
-```
-
-- `AI_PROVIDER=auto`: Gemini first when `GEMINI_API_KEY` is set, then local Ollama,
-  then a deterministic template.
-- `AI_PROVIDER=ollama`: local first, Gemini second if configured.
-- `AI_PROVIDER=gemini`: cloud first, local second.
-- `STRANDS_ENABLED=0`: deterministic only.
-- Ollama must be running, and its configured model installed (e.g.
-  `ollama pull gemma3:4b`). No AWS account is needed for local Strands.
-- The `/api/agent/status` endpoint reports configuration, **not** a successful
-  live health check. An attempted briefing determines actual availability.
-- `AI_TIMEOUT_SECONDS` sets a per-provider wait limit. An underlying blocking
-  model request may continue after the timeout; this is not hard cancellation.
-- Gemini API access may have free-tier quotas depending on model and account; check current Google AI Studio limits; cloud requests send hotspot
-  evidence to the provider. Never place the API key in Vite frontend variables.
-
-Frontend: `cd frontend; npm install; npm run dev`. Optional
-`frontend/.env`: `VITE_API_URL=http://127.0.0.1:8000` for a separately hosted
-frontend. Leave blank when using the included Vite proxy.
-
-The validation panel now uses a **fixed** 150 mm / top 12 / 300 m setup and
-withholds performance figures when fewer than 10 manually verified in-area
-points exist. This is not a validated flood prediction model.
-
-### Outstanding scientific and submission work
-
-- Manually verify historical points and their source dates; replace stale
-  evaluation artifacts. Current data are insufficient for accuracy claims.
-- Hydrology: revisit hotspot saturation/spacing, DEM pits, correlated DEM
-  uncertainty, slope thresholds, and the conflicting waterway proxy.
-- Add measured intensity/capacity data before calling interventions engineering
-  recommendations. Retention basin results remain heuristic what-if scenarios.
-- Test on real mobile devices, add accessible hotspot list and map clustering.
-- Run cloud Gemini and local Ollama end-to-end on your machine; build frontend;
-  capture screenshots, demo video, and reproducible test outputs.
-- Harden public deployment with authentication/rate limits, pinned dependencies,
-  request cancellation, and observability before exposing the agent endpoint.
-
-## Phase 5.2 release notes
-
-See [PHASE5_2_RELEASE_NOTES.md](PHASE5_2_RELEASE_NOTES.md) for changes, limitations, test status, and outstanding work. The susceptibility index is **not** a flood probability or a validated forecast. No historical predictive accuracy is claimed.
