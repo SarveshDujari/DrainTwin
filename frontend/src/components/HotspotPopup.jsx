@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { runIntervention } from "../services/api.js";
 import { COLORS } from "./Map.jsx";
 import AgentBrief from "./AgentBrief.jsx";
@@ -7,13 +7,19 @@ export default function HotspotPopup({ hotspot, rainfall, onClose }) {
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  useEffect(() => setResult(null), [hotspot.id, rainfall]);
+  const pending = useRef(null);
+  useEffect(() => {
+    setResult(null); setError(''); setBusy(false);
+    return () => pending.current?.abort();
+  }, [hotspot.id, rainfall]);
 
   const run = async (type) => {
     setBusy(true); setError("");
-    try { setResult(await runIntervention(hotspot.id, type, rainfall)); }
-    catch (e) { setError(`Scenario unavailable: ${e.message}`); }
-    finally { setBusy(false); }
+    pending.current?.abort();
+    const ctl = new AbortController(); pending.current = ctl;
+    try { const value = await runIntervention(hotspot.id, type, rainfall, ctl.signal); if (!ctl.signal.aborted) setResult(value); }
+    catch (e) { if (!ctl.signal.aborted) setError(`Scenario unavailable: ${e.message}`); }
+    finally { if (!ctl.signal.aborted) setBusy(false); }
   };
 
   return (

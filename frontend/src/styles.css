@@ -116,3 +116,34 @@ button:focus-visible, input:focus-visible { outline:3px solid #2563eb; outline-o
   .stat { min-width:75px; }
   .rain { width:calc(100vw - 16px); }
 }
+.route-planner { top:125px; left:16px; width:300px; max-height:calc(100dvh - 335px); overflow-y:auto; }
+.route-option { display:flex; flex-direction:column; gap:5px; width:100%; text-align:left; padding:12px; margin-top:8px; border:1px solid var(--line); border-radius:9px; background:white; cursor:pointer; color:var(--ink); }
+.route-option.active { border:2px solid var(--accent); background:#f0fdfa; }
+.route-option span { font-size:12px; }
+.brand-actions { display:flex; gap:5px; }
+.route-details { font-size:12px; margin-top:10px; }
+.route-details summary { cursor:pointer; color:#0f766e; }
+.brand-actions .chip { font-size:11px; padding:5px 8px; }
+.map.picking-point { cursor:crosshair; }
+.route-map-focus .route-controls { display:none; }
+.return-controls { bottom:16px; left:16px; cursor:pointer; font:inherit; color:var(--ink); }
+@media(min-width:721px) { .stats { left:340px; right:60px; transform:none; justify-content:flex-end; } .stat { flex:1; min-width:0; max-width:140px; padding:10px 8px; } }
+@media(max-width:720px) { .route-planner { top:115px; left:8px; width:min(300px,calc(100% - 60px)); max-height:calc(100dvh - 320px); } }
+
+/* Stack measured panel heights so forecast text never overlaps the route list. */
+.route-controls { position:absolute; z-index:1000; top:125px; bottom:16px; left:16px; width:300px; display:flex; flex-direction:column; gap:16px; pointer-events:none; }
+.route-controls > .card { position:relative; inset:auto; width:100%; pointer-events:auto; }
+.route-controls .route-planner { flex:1; min-height:100px; max-height:none; overflow-y:auto; }
+.route-controls .rain { flex:none; max-height:40%; overflow-y:auto; }
+.route-settings { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.route-settings label { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12px; }
+.route-settings select { min-width:0; max-width:160px; padding:6px; border:1px solid var(--line); border-radius:6px; background:white; color:var(--ink); }
+.route-summary { background:#f0fdfa; border-left:3px solid var(--accent); padding:10px; margin-top:10px; font-size:12px; line-height:1.5; }
+button:disabled { opacity:.5; cursor:default; }
+select:focus-visible { outline:3px solid #2563eb; outline-offset:2px; }
+@media(max-width:720px) {
+  .route-controls { top:98px; bottom:8px; left:8px; width:min(300px,calc(100vw - 60px)); gap:14px; }
+  .routing-mode .stats { display:none; }
+  .routing-mode .banner { left:auto; right:8px; top:8px; transform:none; max-width:35vw; white-space:normal; }
+}
+@media(max-height:480px) { .route-controls { top:105px; overflow:auto; } .route-controls .route-planner { flex:none; max-height:230px; } .route-controls .rain { max-height:none; } }

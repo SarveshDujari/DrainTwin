@@ -12,7 +12,7 @@ function colour(v) {                                                 // smooth r
     const [a, ca] = STOPS[i], [b, cb] = STOPS[i + 1];
     if (v >= a && v < b) rgb = ca.map((x, k) => x + ((cb[k] - x) * (v - a)) / (b - a));
   }
-  return [...rgb.map(Math.round), Math.round(Math.max(0, Math.min(1, (v - 20) / 45)) * 0.6 * 255)];
+  return [...rgb.map(Math.round), Math.round(Math.max(0, Math.min(1, (v - 25) / 40)) * 0.6 * 255)];
 }
 
 function paint({ rows, cols, scores }) {                             // whole risk grid -> one small image
@@ -24,7 +24,11 @@ function paint({ rows, cols, scores }) {                             // whole ri
   return cv.toDataURL();
 }
 
-export default function MapView({ data, shown, selectedId, onSelect, validationPoints = [] }) {
+export default function MapView({ data, shown, selectedId, onSelect, validationPoints = [], routePoints = [], routes = [], selectedRoute, onPoint, onOutside, fitRequest }) {
+  const routeLayer = useRef(null), pointHandler = useRef(onPoint);
+  const outsideHandler = useRef(onOutside);
+  outsideHandler.current = onOutside;
+  pointHandler.current = onPoint;
   const el = useRef(null), map = useRef(null), overlay = useRef(null), pins = useRef(null), evidencePins = useRef(null), pick = useRef(onSelect);
   pick.current = onSelect;
 
@@ -43,20 +47,28 @@ export default function MapView({ data, shown, selectedId, onSelect, validationP
     }).addTo(m);
     pins.current = L.layerGroup().addTo(m);
     evidencePins.current = L.layerGroup().addTo(m);
+    routeLayer.current = L.layerGroup().addTo(m);
+    m.on('click', e => {
+      const { lat, lng } = e.latlng;
+      if (lat >= AREA[0][0] && lat <= AREA[1][0] && lng >= AREA[0][1] && lng <= AREA[1][1]) pointHandler.current?.({ lat, lng });
+      else if (pointHandler.current) outsideHandler.current?.();
+    });
     const resizeTimer = setTimeout(() => m.invalidateSize(), 100);
     return () => { clearTimeout(resizeTimer); m.remove(); map.current = overlay.current = pins.current = evidencePins.current = null; };
   }, []);
 
   useEffect(() => {                                                  // risk heat layer: one image, smooth shading
-    if (!data || !map.current) return;
+    if (!map.current) return;
+    if (!data) { if (overlay.current) { overlay.current.remove(); overlay.current = null; } return; }
     const url = paint(data.grid), [s, w, n, e] = data.grid.bounds;
     if (overlay.current) overlay.current.setUrl(url);
     else overlay.current = L.imageOverlay(url, [[s, w], [n, e]], { pane: "risk", interactive: false }).addTo(map.current);
   }, [data]);
 
   useEffect(() => {                                                  // pins: top-N full size, the rest small and faded
-    if (!data || !pins.current) return;
+    if (!pins.current) return;
     pins.current.clearLayers();
+    if (!data) return;
     data.hotspots.forEach((h, i) => {
       const top = i < shown, sel = h.id === selectedId;
       const m = L.circleMarker([h.lat, h.lng], {
@@ -78,5 +90,25 @@ export default function MapView({ data, shown, selectedId, onSelect, validationP
     });
   }, [validationPoints]);
 
-  return <div ref={el} className="map" />;
+  useEffect(() => {
+    if (!routeLayer.current) return;
+    routeLayer.current.clearLayers();
+    [...routes].sort((a, b) => Number(a.id === selectedRoute) - Number(b.id === selectedRoute)).forEach(r => {
+      L.geoJSON(r.geometry, { style: { color: r.id === selectedRoute ? '#0d9488' : '#64748b', weight: r.id === selectedRoute ? 6 : 3, opacity: r.id === selectedRoute ? 0.95 : 0.5 }, interactive: false }).addTo(routeLayer.current);
+    });
+    routePoints.forEach((p, i) => {
+      if (p) L.marker([p.lat, p.lng], { interactive: false }).bindTooltip(i === 0 ? 'Start' : 'Destination', { permanent: true }).addTo(routeLayer.current);
+    });
+  }, [routes, routePoints, selectedRoute]);
+
+  useEffect(() => {
+    if (!fitRequest || !map.current) return;
+    const route = routes.find(r => r.id === selectedRoute);
+    if (!route) return;
+    const m = map.current, size = m.getSize();
+    const panelWidth = document.querySelector('.route-controls')?.getBoundingClientRect().width || 0;
+    m.fitBounds(L.geoJSON(route.geometry).getBounds(), { paddingTopLeft: [panelWidth + 12, 120], paddingBottomRight: [30, size.x > 720 ? 160 : 75], maxZoom: 15 });
+  }, [fitRequest]);
+
+  return <div ref={el} className={`map ${onPoint ? 'picking-point' : ''}`} />;
 }
